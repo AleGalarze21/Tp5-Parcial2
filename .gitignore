@@ -11,3 +11,4 @@ local.db-shm
 local.db-wal
 *.log
 coverage
+*.tsbuildinfo

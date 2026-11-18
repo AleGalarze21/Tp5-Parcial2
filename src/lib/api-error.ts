@@ -10,6 +10,11 @@ export class ApiError extends Error {
   }
 }
 
+export async function readJson<T = unknown>(request: Request): Promise<T> {
+  try { return await request.json() as T; }
+  catch { throw new ApiError(400, "JSON_INVALIDO", "El cuerpo de la solicitud no es JSON válido."); }
+}
+
 export function errorResponse(error: unknown) {
   if (error instanceof ApiError) {
     return Response.json({ error: { code: error.code, message: error.message, details: error.details } }, { status: error.status });
