@@ -1,6 +1,7 @@
 {
   "name": "tp5-parcial2",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "packageManager": "pnpm@12.21.0",
   "scripts": {
