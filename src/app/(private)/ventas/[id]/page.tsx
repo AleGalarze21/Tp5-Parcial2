@@ -7,5 +7,5 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const { id } = await params; const invoiceId = Number(id);
   if (!Number.isInteger(invoiceId) || invoiceId < 1) notFound();
   const [invoice, user] = await Promise.all([getInvoice(invoiceId), getCurrentUser()]);
-  return <InvoiceDetails invoice={invoice} isAdmin={user?.role === "admin"}/>;
+  return <InvoiceDetails invoice={invoice} isAdmin={user?.role === "admin"} businessName={process.env.NEXT_PUBLIC_BUSINESS_NAME ?? "Comercio Demo"} businessAddress={process.env.NEXT_PUBLIC_BUSINESS_ADDRESS} businessPhone={process.env.NEXT_PUBLIC_BUSINESS_PHONE}/>;
 }

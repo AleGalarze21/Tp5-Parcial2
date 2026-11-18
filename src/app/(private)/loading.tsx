@@ -1,0 +1,3 @@
+export default function PrivateLoading() {
+  return <div className="animate-pulse space-y-6" aria-label="Cargando pantalla"><div><div className="h-3 w-40 rounded bg-slate-200"/><div className="mt-3 h-8 w-56 rounded bg-slate-200"/><div className="mt-3 h-4 w-80 max-w-full rounded bg-slate-200"/></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-32 rounded-2xl border border-[var(--border)] bg-white p-5"><div className="h-4 w-28 rounded bg-slate-200"/><div className="mt-6 h-7 w-36 rounded bg-slate-200"/></div>)}</div><div className="h-80 rounded-2xl border border-[var(--border)] bg-white"/></div>;
+}

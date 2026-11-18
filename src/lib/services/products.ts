@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { ApiError } from "@/lib/api-error";
 import { db } from "@/lib/db";
-import { categories, products, stockMovements, users } from "@/lib/db/schema";
+import { categories, invoices, products, stockMovements, users } from "@/lib/db/schema";
 import { requireAdmin, requireUser, type AuthenticatedUser } from "@/lib/auth";
 
 const money = z.number().int().nonnegative();
@@ -108,9 +108,13 @@ export async function moveStock(id: number, input: unknown) {
   });
 }
 
-export async function listStockMovements(productId?: number) {
+export async function listStockMovements(productId?: number, params: { type?: string; from?: string; to?: string } = {}) {
   await requireUser();
-  const where = productId ? eq(stockMovements.productId, productId) : undefined;
-  return db.select({ id: stockMovements.id, productId: products.id, code: products.code, description: products.description, type: stockMovements.type, quantity: stockMovements.quantity, resultingStock: stockMovements.resultingStock, reason: stockMovements.reason, createdAt: stockMovements.createdAt, user: users.name }).from(stockMovements).innerJoin(products, eq(stockMovements.productId, products.id)).innerJoin(users, eq(stockMovements.userId, users.id)).where(where).orderBy(desc(stockMovements.createdAt)).limit(100);
+  const filters = [];
+  if (productId) filters.push(eq(stockMovements.productId, productId));
+  if (params.type) filters.push(eq(stockMovements.type, params.type as "venta" | "anulacion" | "ingreso" | "egreso"));
+  if (params.from) filters.push(gte(stockMovements.createdAt, new Date(`${params.from}T00:00:00-03:00`)));
+  if (params.to) filters.push(lte(stockMovements.createdAt, new Date(`${params.to}T23:59:59.999-03:00`)));
+  return db.select({ id: stockMovements.id, productId: products.id, code: products.code, description: products.description, type: stockMovements.type, quantity: stockMovements.quantity, resultingStock: stockMovements.resultingStock, reason: stockMovements.reason, invoiceId: stockMovements.invoiceId, invoiceNumber: invoices.number, pointOfSale: invoices.pointOfSale, createdAt: stockMovements.createdAt, user: users.name }).from(stockMovements).innerJoin(products, eq(stockMovements.productId, products.id)).innerJoin(users, eq(stockMovements.userId, users.id)).leftJoin(invoices, eq(stockMovements.invoiceId, invoices.id)).where(and(...filters)).orderBy(desc(stockMovements.createdAt)).limit(1000);
 }
 
