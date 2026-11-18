@@ -1,6 +1,7 @@
-import { clearSession } from "@/lib/auth";
+import { clearSession, requireUser } from "@/lib/auth";
+import { errorResponse } from "@/lib/api-error";
 
 export async function POST() {
-  await clearSession();
-  return new Response(null, { status: 204 });
+  try { await requireUser(); await clearSession(); return new Response(null, { status: 204 }); }
+  catch (error) { return errorResponse(error); }
 }
