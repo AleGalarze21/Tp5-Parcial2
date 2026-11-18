@@ -44,14 +44,17 @@ export async function getCurrentUser() {
   }
 }
 
-export async function requireUser() {
+export type AuthenticatedUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
+
+export async function requireUser(asUser?: AuthenticatedUser) {
+  if (asUser?.active) return asUser;
   const user = await getCurrentUser();
   if (!user) throw new ApiError(401, "NO_AUTENTICADO", "Iniciá sesión para continuar.");
   return user;
 }
 
-export async function requireAdmin() {
-  const user = await requireUser();
+export async function requireAdmin(asUser?: AuthenticatedUser) {
+  const user = await requireUser(asUser);
   if (user.role !== "admin") throw new ApiError(403, "SIN_PERMISO", "No tenés permiso para realizar esta acción.");
   return user;
 }

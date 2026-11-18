@@ -1,9 +1,10 @@
 import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { ApiError } from "@/lib/api-error";
-import { requireUser } from "@/lib/auth";
+import { requireUser, type AuthenticatedUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { accountMovements, customers, invoices, payments, sequences, users } from "@/lib/db/schema";
+import { accountMovements, customers, invoices, payments, users } from "@/lib/db/schema";
+import { nextSequence } from "@/lib/services/sequences";
 
 const customerSchema = z.object({
   documentType: z.enum(["DNI", "CUIT"]),
@@ -14,7 +15,7 @@ const customerSchema = z.object({
   email: z.union([z.email(), z.literal("")]).optional().nullable(),
   currentAccount: z.boolean().optional().default(false),
   creditLimit: z.number().int().positive().optional().nullable(),
-});
+}).strict();
 
 const balanceExpression = sql<number>`coalesce(sum(case when ${accountMovements.type} = 'debito' then ${accountMovements.amount} else -${accountMovements.amount} end), 0)`;
 
@@ -52,8 +53,8 @@ function validationError(error: z.ZodError) {
   return new ApiError(422, "VALIDACION", "Revisá los datos del cliente.", error.issues.map((issue) => ({ campo: String(issue.path[0] ?? "cliente"), mensaje: issue.message })));
 }
 
-export async function createCustomer(input: unknown) {
-  await requireUser();
+export async function createCustomer(input: unknown, asUser?: AuthenticatedUser) {
+  await requireUser(asUser);
   const parsed = customerSchema.safeParse(input);
   if (!parsed.success) throw validationError(parsed.error);
   const data = parsed.data;
@@ -108,14 +109,8 @@ export async function listAccountMovements(customerId: number, from?: string, to
 
 const paymentSchema = z.object({ amount: z.number().int().positive(), method: z.enum(["efectivo", "transferencia", "tarjeta_debito"]), note: z.string().trim().max(240).optional() });
 
-async function nextSequence(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], kind: "factura" | "recibo") {
-  await tx.insert(sequences).values({ kind, value: 0 }).onConflictDoNothing();
-  const [sequence] = await tx.update(sequences).set({ value: sql`${sequences.value} + 1` }).where(eq(sequences.kind, kind)).returning({ value: sequences.value });
-  return sequence.value;
-}
-
-export async function registerPayment(customerId: number, input: unknown) {
-  const user = await requireUser();
+export async function registerPayment(customerId: number, input: unknown, asUser?: AuthenticatedUser, date = new Date()) {
+  const user = await requireUser(asUser);
   const parsed = paymentSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(422, "VALIDACION", "Revisá el importe y el medio de pago.", parsed.error.issues.map((issue) => ({ campo: String(issue.path[0] ?? "pago"), mensaje: issue.message })));
   return db.transaction(async (tx) => {
@@ -126,8 +121,8 @@ export async function registerPayment(customerId: number, input: unknown) {
     const balance = Number(currentBalance?.balance ?? 0);
     if (parsed.data.amount > balance) throw new ApiError(422, "PAGO_SUPERA_DEUDA", "El pago no puede superar la deuda actual.");
     const number = await nextSequence(tx, "recibo");
-    const [payment] = await tx.insert(payments).values({ receiptNumber: number, customerId, userId: user.id, amount: parsed.data.amount, method: parsed.data.method, note: parsed.data.note || null }).returning();
-    await tx.insert(accountMovements).values({ customerId, paymentId: payment.id, userId: user.id, type: "credito", amount: payment.amount, description: `Recibo R 0001-${String(number).padStart(8, "0")}` });
+    const [payment] = await tx.insert(payments).values({ receiptNumber: number, customerId, userId: user.id, amount: parsed.data.amount, method: parsed.data.method, note: parsed.data.note || null, createdAt: date }).returning();
+    await tx.insert(accountMovements).values({ customerId, paymentId: payment.id, userId: user.id, type: "credito", amount: payment.amount, description: `Recibo R 0001-${String(number).padStart(8, "0")}`, createdAt: date });
     return { id: payment.id, receiptNumber: `R 0001-${String(number).padStart(8, "0")}`, date: payment.createdAt, customer: { id: customer.id, name: customer.name }, amount: payment.amount, method: payment.method, user: { id: user.id, name: user.name }, balance: balance - payment.amount };
   });
 }

@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { ApiError } from "@/lib/api-error";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { requireAdmin, requireUser, type AuthenticatedUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 
@@ -10,9 +10,9 @@ export async function listCategories() {
   return db.select().from(categories).where(eq(categories.active, true)).orderBy(asc(categories.name));
 }
 
-export async function createCategory(input: unknown) {
-  await requireAdmin();
-  const parsed = z.object({ name: z.string().trim().min(2).max(80) }).safeParse(input);
+export async function createCategory(input: unknown, asUser?: AuthenticatedUser) {
+  await requireAdmin(asUser);
+  const parsed = z.object({ name: z.string().trim().min(2).max(80) }).strict().safeParse(input);
   if (!parsed.success) throw new ApiError(422, "VALIDACION", "El nombre debe tener entre 2 y 80 caracteres.");
   try {
     const [category] = await db.insert(categories).values({ name: parsed.data.name }).returning();

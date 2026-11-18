@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ApiError } from "@/lib/api-error";
 import { db } from "@/lib/db";
 import { categories, products, stockMovements, users } from "@/lib/db/schema";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { requireAdmin, requireUser, type AuthenticatedUser } from "@/lib/auth";
 
 const money = z.number().int().nonnegative();
 const productCreateSchema = z.object({
@@ -13,7 +13,7 @@ const productCreateSchema = z.object({
   price: money,
   minStock: z.number().int().nonnegative(),
   initialStock: z.number().int().nonnegative().optional().default(0),
-});
+}).strict();
 const productPatchSchema = z.object({
   code: z.string().trim().min(1).max(32).optional(),
   description: z.string().trim().min(2).max(160).optional(),
@@ -52,8 +52,8 @@ export async function getProduct(id: number) {
   return product;
 }
 
-export async function createProduct(input: unknown) {
-  const user = await requireAdmin();
+export async function createProduct(input: unknown, asUser?: AuthenticatedUser) {
+  const user = await requireAdmin(asUser);
   const parsed = productCreateSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(422, "VALIDACION", "Revisá los datos del producto.", parsed.error.issues.map((issue) => ({ campo: String(issue.path[0] ?? "producto"), mensaje: issue.message })));
   const data = parsed.data;
