@@ -1,0 +1,12 @@
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PrintButton } from "@/components/print-button";
+import { getPayment } from "@/lib/services/customers";
+import { currency, dateTime } from "@/lib/utils";
+
+export default async function PaymentReceiptPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params; const payment = await getPayment(Number(id));
+  const method = { efectivo: "Efectivo", transferencia: "Transferencia", tarjeta_debito: "Tarjeta de débito" }[payment.method];
+  return <div className="mx-auto max-w-2xl space-y-5"><div className="flex items-center justify-between print:hidden"><Link href={`/clientes/${payment.customerId}`}><Button variant="ghost" size="sm"><ArrowLeft size={16}/>Volver al cliente</Button></Link><PrintButton/></div><article className="rounded-2xl border border-[var(--border)] bg-white p-8 print:border-0 print:shadow-none"><div className="flex items-start justify-between border-b border-[var(--border)] pb-6"><div><p className="text-sm font-semibold uppercase tracking-[.16em] text-[var(--primary)]">Comprobante de pago</p><h1 className="mt-2 text-2xl font-bold">Recibo {payment.formattedNumber}</h1><p className="mt-2 text-sm text-[var(--muted)]">{dateTime(payment.date)}</p></div><CheckCircle2 className="text-emerald-600" size={28}/></div><div className="space-y-5 py-6"><div><p className="text-xs uppercase tracking-wide text-[var(--muted)]">Recibimos de</p><p className="mt-1 font-semibold">{payment.customer}</p></div><div className="grid gap-4 sm:grid-cols-2"><div><p className="text-xs uppercase tracking-wide text-[var(--muted)]">Medio</p><p className="mt-1 font-medium">{method}</p></div><div><p className="text-xs uppercase tracking-wide text-[var(--muted)]">Registrado por</p><p className="mt-1 font-medium">{payment.user}</p></div></div>{payment.note && <div><p className="text-xs uppercase tracking-wide text-[var(--muted)]">Observación</p><p className="mt-1 font-medium">{payment.note}</p></div>}</div><div className="rounded-xl bg-[var(--primary-soft)] p-5"><p className="text-sm text-[var(--primary)]">Importe abonado</p><p className="mt-1 text-3xl font-bold text-[var(--primary)]">{currency(payment.amount)}</p></div><p className="mt-6 text-center text-xs text-[var(--muted)]">Comprobante interno de cuenta corriente.</p></article></div>;
+}
