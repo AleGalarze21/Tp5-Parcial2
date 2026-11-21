@@ -25,6 +25,7 @@ export function LoginForm() {
     <label className="block space-y-2 text-sm font-medium">Contraseña
       <span className="flex h-11 items-center gap-3 rounded-lg border border-[var(--border)] px-3 focus-within:border-[var(--primary)]"><LockKeyhole size={17} className="text-slate-400"/><input name="password" type="password" autoComplete="current-password" required className="w-full bg-transparent outline-none" placeholder="Tu contraseña" /></span>
     </label>
+    <p className="-mt-2 text-xs text-[var(--muted)]">Solicite al admin, la cuenta predeterminada</p>
     {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
     <Button disabled={busy} className="w-full">{busy ? "Ingresando…" : "Ingresar"}</Button>
   </form>;
