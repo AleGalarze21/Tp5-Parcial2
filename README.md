@@ -5,7 +5,7 @@ Aplicación web para una tienda especializada en placas gráficas, componentes d
 ## Entrega
 
 - **Repositorio:** https://github.com/AleGalarze21/Tp5-Parcial2
-- **Aplicación publicada:** pendiente de configurar Vercel y Turso.
+- **Aplicaci?n publicada:** agregar aqu? la URL p?blica de Vercel. La base de producci?n est? configurada en Turso.
 - **Integrantes:** completar con nombres y números de legajo.
 
 ## Tecnologías
