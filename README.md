@@ -5,8 +5,8 @@ Aplicación web para una tienda especializada en placas gráficas, componentes d
 ## Entrega
 
 - **Repositorio:** https://github.com/AleGalarze21/Tp5-Parcial2
-- **Aplicación publicada:** agregar aquí la URL pública de Vercel. La base de producción está configurada en Turso.
-- **Integrantes:** completar con nombres y números de legajo.
+- **Aplicación publicada:** https://tp5-parcial2.vercel.app/login
+- **Integrantes:** Francisco Palacios (legajo 61024), Cristian Ledesma (legajo 62523) y Alejandro Galarze (legajo 63142).
 
 ## Tecnologías
 
@@ -72,8 +72,8 @@ Para reiniciar la base local, omití `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`. 
 
 | Rol | Email | Contraseña |
 | --- | --- | --- |
-| Administrador | `laura@nexusgpu.test` | `Admin123!` |
-| Vendedor | `pablo@nexusgpu.test` | `Vendedor123!` |
+| Administrador | `laura@nexusgpu.test` | `0987654321@Ale` |
+| Vendedor | `pablo@nexusgpu.test` | `0987654321@Ale1` |
 
 El seed también carga 5 categorías, 30 productos de hardware, 10 clientes y hasta 50 facturas distribuidas en los últimos 30 días. Cambiá las contraseñas de prueba antes de publicar el sistema.
 

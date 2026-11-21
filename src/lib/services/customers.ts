@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { accountMovements, customers, invoices, payments, users } from "@/lib/db/schema";
 import { nextSequence } from "@/lib/services/sequences";
 import { accountPaymentSchema, customerPatchSchema, customerSchema } from "@/lib/schemas";
+import { formatReceiptNumber } from "@/lib/utils";
 
 const balanceExpression = sql<number>`coalesce(sum(case when ${accountMovements.type} = 'debito' then ${accountMovements.amount} else -${accountMovements.amount} end), 0)`;
 
@@ -110,8 +111,8 @@ export async function registerPayment(customerId: number, input: unknown, asUser
     if (parsed.data.amount > balance) throw new ApiError(422, "PAGO_SUPERA_DEUDA", "El pago no puede superar la deuda actual.");
     const number = await nextSequence(tx, "recibo");
     const [payment] = await tx.insert(payments).values({ receiptNumber: number, customerId, userId: user.id, amount: parsed.data.amount, method: parsed.data.method, note: parsed.data.note || null, createdAt: date }).returning();
-    await tx.insert(accountMovements).values({ customerId, paymentId: payment.id, userId: user.id, type: "credito", amount: payment.amount, description: `Recibo R 0001-${String(number).padStart(8, "0")}`, createdAt: date });
-    return { id: payment.id, receiptNumber: `R 0001-${String(number).padStart(8, "0")}`, date: payment.createdAt, customer: { id: customer.id, name: customer.name }, amount: payment.amount, method: payment.method, user: { id: user.id, name: user.name }, balance: balance - payment.amount };
+    await tx.insert(accountMovements).values({ customerId, paymentId: payment.id, userId: user.id, type: "credito", amount: payment.amount, description: `Recibo ${formatReceiptNumber(number)}`, createdAt: date });
+    return { id: payment.id, receiptNumber: formatReceiptNumber(number), date: payment.createdAt, customer: { id: customer.id, name: customer.name }, amount: payment.amount, method: payment.method, user: { id: user.id, name: user.name }, balance: balance - payment.amount };
   });
 }
 
@@ -119,5 +120,5 @@ export async function getPayment(id: number) {
   await requireUser();
   const [payment] = await db.select({ id: payments.id, receiptNumber: payments.receiptNumber, date: payments.createdAt, customerId: customers.id, customer: customers.name, amount: payments.amount, method: payments.method, note: payments.note, user: users.name }).from(payments).innerJoin(customers, eq(payments.customerId, customers.id)).innerJoin(users, eq(payments.userId, users.id)).where(eq(payments.id, id)).limit(1);
   if (!payment) throw new ApiError(404, "NO_ENCONTRADO", "No encontramos ese recibo.");
-  return { ...payment, formattedNumber: `R 0001-${String(payment.receiptNumber).padStart(8, "0")}` };
+  return { ...payment, formattedNumber: formatReceiptNumber(payment.receiptNumber) };
 }

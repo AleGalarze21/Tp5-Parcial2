@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Boxes, CircleDollarSign, ReceiptText, Users } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard-charts";
 import { getDashboard } from "@/lib/services/dashboard";
-import { currency } from "@/lib/utils";
+import { currency, dateLong } from "@/lib/utils";
 
 const toneStyles = {
   teal: "bg-lime-100 text-lime-800",
@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   return <div className="space-y-8">
     <section className="relative overflow-hidden rounded-3xl bg-[#151713] px-6 py-8 text-white shadow-xl shadow-lime-950/10 md:px-9 md:py-10">
       <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 82% 12%, #76b900 0, transparent 32%), linear-gradient(135deg, transparent 55%, rgba(118,185,0,.16) 55.2%, transparent 55.5%)" }} />
-      <div className="relative flex flex-wrap items-end justify-between gap-6"><div className="max-w-2xl"><p className="text-xs font-bold tracking-[.22em] text-[#a8e344]">NEXUS GPU <span className="mx-2 text-white/30">/</span> HARDWARE PARA LA NUEVA ERA</p><h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">Potencia para gaming.<br className="hidden sm:block"/> Rendimiento para IA.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-white/65">Panel de operaciones para tu tienda de placas gráficas, componentes y equipos de inteligencia artificial.</p></div><div className="flex flex-col items-start gap-3 sm:items-end"><p className="text-sm capitalize text-white/50">{new Intl.DateTimeFormat("es-AR", { dateStyle: "full", timeZone: "America/Argentina/Buenos_Aires" }).format(now)}</p><Link href="/ventas/nueva" className="inline-flex items-center gap-2 rounded-lg bg-[#76b900] px-4 py-2.5 text-sm font-bold text-[#11140d] transition hover:bg-[#8bd500]"><ReceiptText size={17}/> Iniciar una venta</Link></div></div>
+    <div className="relative flex flex-wrap items-end justify-between gap-6"><div className="max-w-2xl"><p className="text-xs font-bold tracking-[.22em] text-[#a8e344]">NEXUS GPU <span className="mx-2 text-white/30">/</span> HARDWARE PARA LA NUEVA ERA</p><h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">Potencia para gaming.<br className="hidden sm:block"/> Rendimiento para IA.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-white/65">Panel de operaciones para tu tienda de placas gráficas, componentes y equipos de inteligencia artificial.</p></div><div className="flex flex-col items-start gap-3 sm:items-end"><p className="text-sm capitalize text-white/50">{dateLong(now)}</p><Link href="/ventas/nueva" className="inline-flex items-center gap-2 rounded-lg bg-[#76b900] px-4 py-2.5 text-sm font-bold text-[#11140d] transition hover:bg-[#8bd500]"><ReceiptText size={17}/> Iniciar una venta</Link></div></div>
     </section>
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map(({ title, value, detail, icon: Icon, tone }) => <article key={title} className="rounded-2xl border border-[var(--border)] bg-white p-5"><div className="flex items-start justify-between"><span className="text-sm font-medium text-[var(--muted)]">{title}</span><span className={`grid size-10 place-items-center rounded-xl ${toneStyles[tone]}`}><Icon size={19}/></span></div><p className="mt-5 text-2xl font-semibold tabular-nums">{value}</p><p className="mt-1 text-xs text-[var(--muted)]">{detail}</p></article>)}</section>
     <DashboardCharts sales={stats.ventasDiarias} paymentForms={stats.porFormaDePago}/>

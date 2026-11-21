@@ -2,8 +2,7 @@ import { and, count, eq, gte, lte, sql } from "drizzle-orm";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { accountMovements, invoiceItems, invoices, products } from "@/lib/db/schema";
-
-const argentinaDateKey = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+import { argentinaDateKey } from "@/lib/utils";
 
 export async function getDashboard() {
   await requireUser();

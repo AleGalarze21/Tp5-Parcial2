@@ -6,10 +6,7 @@ import { accountMovements, customers, invoiceItems, invoices, products, sequence
 import { nextSequence } from "@/lib/services/sequences";
 import { moveStockInTransaction } from "@/lib/services/stock";
 import { invoiceCancellationSchema, invoiceSchema } from "@/lib/schemas";
-
-export function formatInvoiceNumber(pointOfSale: number, number: number) {
-  return `${String(pointOfSale).padStart(4, "0")}-${String(number).padStart(8, "0")}`;
-}
+import { formatInvoiceNumber } from "@/lib/utils";
 
 export async function getNextInvoiceNumber() {
   await requireUser();
