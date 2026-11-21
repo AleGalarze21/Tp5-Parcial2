@@ -15,8 +15,10 @@ async function ensureUser(email: string, name: string, password: string, role: "
   return created;
 }
 
-const admin = await ensureUser("laura@nexusgpu.test", "Laura Méndez", "Admin123!", "admin");
-const seller = await ensureUser("pablo@nexusgpu.test", "Pablo Ruiz", "Vendedor123!", "vendedor");
+const catalogOnly = process.env.SEED_CATALOG_ONLY === "true";
+const [existingAdmin] = await db.select().from(users).where(eq(users.role, "admin")).limit(1);
+const admin = existingAdmin ?? await ensureUser("laura@nexusgpu.test", "Laura Méndez", "Admin123!", "admin");
+const seller = catalogOnly ? undefined : await ensureUser("pablo@nexusgpu.test", "Pablo Ruiz", "Vendedor123!", "vendedor");
 const categoryNames = ["Placas de video", "Procesadores", "Memoria y almacenamiento", "Equipos para IA", "Refrigeración y fuentes"];
 const categoryIds: number[] = [];
 for (const name of categoryNames) {
@@ -51,7 +53,7 @@ for (let i = 0; i < productsCatalog.length; i++) {
 
 const customerIds: number[] = [];
 const customerNames = ["Mariana López", "Carlos Ramírez", "Lucía Fernández", "Diego González", "Sofía Martínez", "Andrés Torres", "Valentina Ruiz", "Miguel Castro", "Camila Herrera", "Nicolás Díaz"];
-for (let i = 0; i < customerNames.length; i++) {
+for (let i = 0; !catalogOnly && i < customerNames.length; i++) {
   const documentNumber = String(28456123 + i * 15731);
   const [existing] = await db.select({ id: customers.id }).from(customers).where(eq(customers.documentNumber, documentNumber)).limit(1);
   const customer = existing ? { id: existing.id } : await createCustomer({ documentType: "DNI", documentNumber, name: customerNames[i], address: `${300 + i * 12} San Martín`, phone: `381 455-${String(2210 + i).padStart(4, "0")}`, email: `cliente${i + 1}@correo.test`, currentAccount: i < 7, creditLimit: i === 0 ? null : 5000000000 }, admin);
@@ -60,7 +62,7 @@ for (let i = 0; i < customerNames.length; i++) {
 }
 
 const [invoiceCount] = await db.select({ total: count() }).from(invoices);
-if (invoiceCount.total < 50) {
+if (!catalogOnly && seller && invoiceCount.total < 50) {
   for (let i = Number(invoiceCount.total); i < 50; i++) {
     const daysAgo = (29 - (i % 30));
     const date = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000 - (i % 10) * 31 * 60 * 1000);
@@ -88,5 +90,7 @@ if (invoiceCount.total < 50) {
 }
 
 console.log("Datos de prueba listos.");
-console.log("Admin: laura@nexusgpu.test / Admin123!");
-console.log("Vendedor: pablo@nexusgpu.test / Vendedor123!");
+if (!catalogOnly) {
+  console.log("Admin: laura@nexusgpu.test / Admin123!");
+  console.log("Vendedor: pablo@nexusgpu.test / Vendedor123!");
+}

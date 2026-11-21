@@ -38,6 +38,20 @@ pnpm run dev
 
 Abrí `http://localhost:3000`. `db:migrate` crea el esquema SQLite local en `local.db`. `db:seed` agrega datos de ejemplo de forma idempotente.
 
+### Actualizar solo el catálogo en Turso
+
+En PowerShell, cargá la URL y el token de la base Turso y ejecutá el seed en modo catálogo. Este modo actualiza productos y categorías sin crear clientes de prueba ni facturas:
+
+```powershell
+$env:TURSO_DATABASE_URL = "libsql://<base>-<organizacion>.turso.io"
+$env:TURSO_AUTH_TOKEN = "<token-de-turso>"
+$env:SEED_CATALOG_ONLY = "true"
+corepack pnpm run db:seed
+Remove-Item Env:SEED_CATALOG_ONLY
+```
+
+Usá la URL `libsql://` de Turso, no `file:local.db`. El token se obtiene desde la configuración de conexión de la base y no debe subirse a GitHub.
+
 ## Usuarios de prueba
 
 | Rol | Email | Contraseña |
