@@ -11,7 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "db:reset-demo": "tsx scripts/reset-demo.ts"
+    "db:reset-demo": "node --require ./scripts/preload-tsx-windows.cjs ./node_modules/tsx/dist/cli.mjs scripts/reset-demo.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

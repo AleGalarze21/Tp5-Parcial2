@@ -47,7 +47,7 @@ $env:TURSO_DATABASE_URL = "libsql://<base>-<organizacion>.turso.io"
 $env:TURSO_AUTH_TOKEN = "<token-de-turso>"
 $env:SEED_CATALOG_ONLY = "true"
 corepack pnpm run db:seed
-Remove-Item Env:SEED_CATALOG_ONLY
+Remove-Item Env:SEED_CATALOG_ONLY -ErrorAction SilentlyContinue
 ```
 
 Usá la URL `libsql://` de Turso, no `file:local.db`. El token se obtiene desde la configuración de conexión de la base y no debe subirse a GitHub.
@@ -60,8 +60,10 @@ Este comando borra clientes, facturas, pagos, movimientos, productos, categoría
 $env:TURSO_DATABASE_URL = "libsql://<base>-<organizacion>.turso.io"
 $env:TURSO_AUTH_TOKEN = "<token-de-turso>"
 $env:RESET_DATABASE = "true"
+$preload = (Resolve-Path .\scripts\preload-tsx-windows.cjs).Path.Replace('\', '/')
+$env:NODE_OPTIONS = "--require=$preload"
 corepack pnpm run db:reset-demo
-Remove-Item Env:RESET_DATABASE, Env:TURSO_DATABASE_URL, Env:TURSO_AUTH_TOKEN
+Remove-Item Env:RESET_DATABASE, Env:TURSO_DATABASE_URL, Env:TURSO_AUTH_TOKEN, Env:NODE_OPTIONS -ErrorAction SilentlyContinue
 ```
 
 Para reiniciar la base local, omití `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`. La protección `RESET_DATABASE=true` es obligatoria para ejecutar el borrado.
