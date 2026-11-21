@@ -14,7 +14,7 @@ Aplicación web para una tienda especializada en placas gráficas, componentes d
 - Route Handlers REST
 - Tailwind CSS y componentes de interfaz basados en shadcn/ui
 - SQLite local y libSQL/Turso remoto, con Drizzle ORM y migraciones
-- Zod para validar operaciones del servidor
+- Zod para validar formularios y operaciones del servidor con esquemas compartidos
 - Chart.js para el tablero
 - Sesiones firmadas en cookie `httpOnly`; contraseñas con bcrypt
 
