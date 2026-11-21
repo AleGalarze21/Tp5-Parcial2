@@ -1,6 +1,6 @@
-# Mostrador — sistema de gestión comercial
+# NEXUS GPU — gestión de hardware e inteligencia artificial
 
-Aplicación web para ventas, catálogo y stock, clientes con cuenta corriente y usuarios con permisos. Las facturas son comprobantes internos sin validez fiscal.
+Aplicación web para una tienda especializada en placas gráficas, componentes de PC y equipos para inteligencia artificial. Incluye ventas, catálogo y stock, clientes con cuenta corriente y usuarios con permisos. Las facturas son comprobantes internos sin validez fiscal. La identidad visual usa una paleta oscura con acentos verdes, inspirada en el mundo del hardware y la IA.
 
 ## Entrega
 
@@ -42,10 +42,10 @@ Abrí `http://localhost:3000`. `db:migrate` crea el esquema SQLite local en `loc
 
 | Rol | Email | Contraseña |
 | --- | --- | --- |
-| Administrador | `laura@ferreteria.test` | `Admin123!` |
-| Vendedor | `pablo@ferreteria.test` | `Vendedor123!` |
+| Administrador | `laura@nexusgpu.test` | `Admin123!` |
+| Vendedor | `pablo@nexusgpu.test` | `Vendedor123!` |
 
-El seed también carga 5 categorías, 30 productos, 10 clientes y hasta 50 facturas distribuidas en los últimos 30 días. Cambiá las contraseñas de prueba antes de publicar el sistema.
+El seed también carga 5 categorías, 30 productos de hardware, 10 clientes y hasta 50 facturas distribuidas en los últimos 30 días. Cambiá las contraseñas de prueba antes de publicar el sistema.
 
 ## Variables de entorno
 

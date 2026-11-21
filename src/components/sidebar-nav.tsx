@@ -15,6 +15,6 @@ export function SidebarNav({ role }: { role: string }) {
   const pathname = usePathname();
   return <nav className="space-y-1">{links.filter((link) => !link.admin || role === "admin").map(({ href, label, icon: Icon }) => {
     const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
-    return <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${active ? "bg-[var(--primary-soft)] text-[var(--primary)]" : "text-slate-600 hover:bg-slate-50 hover:text-[var(--primary)]"}`}><Icon size={18}/>{label}</Link>;
+    return <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${active ? "bg-[var(--primary)] text-[#10130d]" : "text-white/65 hover:bg-white/5 hover:text-white"}`}><Icon size={18}/>{label}</Link>;
   })}</nav>;
 }

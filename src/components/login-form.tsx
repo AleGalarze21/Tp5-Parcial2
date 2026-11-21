@@ -20,7 +20,7 @@ export function LoginForm() {
   }
   return <form action={submit} className="space-y-5">
     <label className="block space-y-2 text-sm font-medium">Email
-      <span className="flex h-11 items-center gap-3 rounded-lg border border-[var(--border)] px-3 focus-within:border-[var(--primary)]"><Mail size={17} className="text-slate-400"/><input name="email" type="email" autoComplete="username" required className="w-full bg-transparent outline-none" placeholder="nombre@comercio.com" /></span>
+      <span className="flex h-11 items-center gap-3 rounded-lg border border-[var(--border)] px-3 focus-within:border-[var(--primary)]"><Mail size={17} className="text-slate-400"/><input name="email" type="email" autoComplete="username" required className="w-full bg-transparent outline-none" placeholder="nombre@nexusgpu.test" /></span>
     </label>
     <label className="block space-y-2 text-sm font-medium">Contraseña
       <span className="flex h-11 items-center gap-3 rounded-lg border border-[var(--border)] px-3 focus-within:border-[var(--primary)]"><LockKeyhole size={17} className="text-slate-400"/><input name="password" type="password" autoComplete="current-password" required className="w-full bg-transparent outline-none" placeholder="Tu contraseña" /></span>

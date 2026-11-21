@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f7f8;
-  --foreground: #142126;
-  --muted: #68777c;
-  --border: #dce4e6;
-  --primary: #176b65;
-  --primary-soft: #e2f2ef;
+  --background: #f3f5f1;
+  --foreground: #171a16;
+  --muted: #70766e;
+  --border: #e0e5dc;
+  --primary: #76b900;
+  --primary-soft: #edf6dc;
   --surface: #ffffff;
 }
 
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--background); }
-body { margin: 0; color: var(--foreground); font-family: Arial, Helvetica, sans-serif; }
+body { margin: 0; color: var(--foreground); font-family: Arial, Helvetica, sans-serif; background: var(--background); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+::selection { color: #10130d; background: #b7ef54; }

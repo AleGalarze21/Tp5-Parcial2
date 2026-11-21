@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { hash } from "bcryptjs";
-import { count, eq } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import { db } from "../src/lib/db";
 import { categories, customers, invoices, products, users } from "../src/lib/db/schema";
 import { createCategory } from "../src/lib/services/categories";
@@ -15,30 +15,38 @@ async function ensureUser(email: string, name: string, password: string, role: "
   return created;
 }
 
-const admin = await ensureUser("laura@ferreteria.test", "Laura Méndez", "Admin123!", "admin");
-const seller = await ensureUser("pablo@ferreteria.test", "Pablo Ruiz", "Vendedor123!", "vendedor");
-const categoryNames = ["Herramientas", "Electricidad", "Pinturería", "Plomería", "Jardín"];
+const admin = await ensureUser("laura@nexusgpu.test", "Laura Méndez", "Admin123!", "admin");
+const seller = await ensureUser("pablo@nexusgpu.test", "Pablo Ruiz", "Vendedor123!", "vendedor");
+const categoryNames = ["Placas de video", "Procesadores", "Memoria y almacenamiento", "Equipos para IA", "Refrigeración y fuentes"];
 const categoryIds: number[] = [];
 for (const name of categoryNames) {
   const [existing] = await db.select().from(categories).where(eq(categories.name, name)).limit(1);
   const category = existing ?? await createCategory({ name }, admin);
   categoryIds.push(category.id);
 }
+await db.update(categories).set({ active: false }).where(inArray(categories.name, ["Herramientas", "Electricidad", "Pinturería", "Plomería", "Jardín"]));
 
 const productsCatalog = [
-  "Martillo carpintero 500 g", "Destornillador plano 6 mm", "Pinza universal 8 pulgadas", "Taladro percutor 650 W", "Juego de llaves combinadas",
-  "Cinta aisladora 20 m", "Cable unipolar 2.5 mm", "Lámpara LED 12 W", "Térmica bipolar 20 A", "Toma doble 10 A",
-  "Látex interior blanco 4 L", "Pincel cerda 2 pulgadas", "Rodillo para pared 22 cm", "Enduido interior 1 kg", "Lija para madera grano 120",
-  "Caño PVC 40 mm", "Codo PVC 90 grados", "Cinta teflón 12 m", "Canilla monocomando", "Sifón flexible universal",
-  "Manguera jardín 15 m", "Pala de punta reforzada", "Tijera de podar", "Maceta plástica 30 cm", "Regadera 5 L",
-  "Llave francesa 10 pulgadas", "Sierra manual 20 pulgadas", "Guantes moteados", "Nivel de burbuja 40 cm", "Mecha para pared 8 mm",
+  "GeForce RTX 5090 32 GB GDDR7", "GeForce RTX 5080 16 GB GDDR7", "GeForce RTX 5070 Ti 16 GB", "GeForce RTX 5070 12 GB", "GeForce RTX 5060 Ti 16 GB", "GeForce RTX 5060 8 GB",
+  "AMD Ryzen 9 9950X 16 núcleos", "AMD Ryzen 7 9800X3D", "AMD Ryzen 5 9600X", "Intel Core Ultra 9 285K", "Intel Core Ultra 7 265K", "Intel Core Ultra 5 245K",
+  "Memoria DDR5 64 GB 6000 MHz", "Memoria DDR5 32 GB 6000 MHz", "SSD NVMe Gen5 2 TB", "SSD NVMe Gen4 2 TB", "SSD NVMe Gen4 1 TB", "Disco externo SSD 2 TB",
+  "Workstation IA Ryzen Threadripper", "Workstation IA dual GPU RTX", "Servidor IA 4x GPU 96 GB", "Estación de inferencia compacta", "Kit de desarrollo NVIDIA Jetson", "Acelerador IA PCIe 48 GB",
+  "Fuente 1200 W 80+ Platinum", "Fuente 1000 W 80+ Gold", "Refrigeración líquida 360 mm", "Refrigeración líquida 240 mm", "Gabinete full tower airflow", "Gabinete workstation E-ATX",
 ];
+const basePrices = [279990000, 189990000, 149990000, 109990000, 89990000];
 const productIds: number[] = [];
 for (let i = 0; i < productsCatalog.length; i++) {
   const code = `PR-${String(i + 1).padStart(3, "0")}`;
+  const categoryIndex = Math.floor(i / 6);
+  const price = basePrices[categoryIndex] + (i % 6) * (categoryIndex === 0 ? 17500000 : 6500000);
   const [existing] = await db.select({ id: products.id }).from(products).where(eq(products.code, code)).limit(1);
-  const created = existing ?? await createProduct({ code, description: productsCatalog[i], categoryId: categoryIds[Math.floor(i / 6)], price: 280000 + (i % 9) * 137000, minStock: 8, initialStock: 50 }, admin);
-  productIds.push(created.id);
+  if (existing) {
+    await db.update(products).set({ description: productsCatalog[i], categoryId: categoryIds[categoryIndex], price, minStock: 3, active: true }).where(eq(products.id, existing.id));
+    productIds.push(existing.id);
+  } else {
+    const created = await createProduct({ code, description: productsCatalog[i], categoryId: categoryIds[categoryIndex], price, minStock: 3, initialStock: 12 }, admin);
+    productIds.push(created.id);
+  }
 }
 
 const customerIds: number[] = [];
@@ -46,7 +54,8 @@ const customerNames = ["Mariana López", "Carlos Ramírez", "Lucía Fernández",
 for (let i = 0; i < customerNames.length; i++) {
   const documentNumber = String(28456123 + i * 15731);
   const [existing] = await db.select({ id: customers.id }).from(customers).where(eq(customers.documentNumber, documentNumber)).limit(1);
-  const customer = existing ? { id: existing.id } : await createCustomer({ documentType: "DNI", documentNumber, name: customerNames[i], address: `${300 + i * 12} San Martín`, phone: `381 455-${String(2210 + i).padStart(4, "0")}`, email: `cliente${i + 1}@correo.test`, currentAccount: i < 7, creditLimit: i === 0 ? null : 8000000 }, admin);
+  const customer = existing ? { id: existing.id } : await createCustomer({ documentType: "DNI", documentNumber, name: customerNames[i], address: `${300 + i * 12} San Martín`, phone: `381 455-${String(2210 + i).padStart(4, "0")}`, email: `cliente${i + 1}@correo.test`, currentAccount: i < 7, creditLimit: i === 0 ? null : 5000000000 }, admin);
+  if (existing) await db.update(customers).set({ currentAccount: i < 7, creditLimit: i === 0 ? null : 5000000000 }).where(eq(customers.id, existing.id));
   customerIds.push(customer.id);
 }
 
@@ -79,5 +88,5 @@ if (invoiceCount.total < 50) {
 }
 
 console.log("Datos de prueba listos.");
-console.log("Admin: laura@ferreteria.test / Admin123!");
-console.log("Vendedor: pablo@ferreteria.test / Vendedor123!");
+console.log("Admin: laura@nexusgpu.test / Admin123!");
+console.log("Vendedor: pablo@nexusgpu.test / Vendedor123!");

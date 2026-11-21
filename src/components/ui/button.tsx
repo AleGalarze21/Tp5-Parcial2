@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const buttonVariants = cva("inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-50", {
   variants: {
     variant: {
-      default: "bg-[var(--primary)] text-white hover:brightness-95",
+      default: "bg-[var(--primary)] text-[#10130d] hover:brightness-95",
       outline: "border border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-slate-50",
       ghost: "text-[var(--foreground)] hover:bg-slate-100",
       destructive: "bg-red-600 text-white hover:bg-red-700",
