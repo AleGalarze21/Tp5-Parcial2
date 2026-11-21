@@ -7,6 +7,7 @@ import { ArrowUpRight, Pencil, Plus, Search, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { currency } from "@/lib/utils";
 import { Pagination } from "@/components/pagination";
+import { customerPatchSchema, customerSchema } from "@/lib/schemas";
 
 type Customer = { id: number; documentType: "DNI" | "CUIT"; documentNumber: string; name: string; address: string | null; phone: string | null; email: string | null; currentAccount: boolean; creditLimit: number | null; active: boolean; balance: number };
 export function CustomerManager({ customers, query, canEdit, page, total, pageSize }: { customers: Customer[]; query: string; canEdit: boolean; page: number; total: number; pageSize: number }) {
@@ -19,7 +20,9 @@ export function CustomerManager({ customers, query, canEdit, page, total, pageSi
     const currentAccount = form.get("currentAccount") === "on";
     const limit = form.get("creditLimit");
     const data = { documentType: form.get("documentType"), documentNumber: form.get("documentNumber"), name: form.get("name"), address: form.get("address") || null, phone: form.get("phone") || null, email: form.get("email") || null, currentAccount, creditLimit: currentAccount && limit ? Math.round(Number(limit) * 100) : null };
-    const response = await fetch(selected ? `/api/clientes/${selected.id}` : "/api/clientes", { method: selected ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const validation = (selected ? customerPatchSchema : customerSchema).safeParse(data);
+    if (!validation.success) { setBusy(false); setError(validation.error.issues[0]?.message ?? "Revisá los datos del cliente."); return; }
+    const response = await fetch(selected ? `/api/clientes/${selected.id}` : "/api/clientes", { method: selected ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo guardar el cliente."); return; }
     setModal(false); setNotice(selected ? "Cliente actualizado." : "Cliente creado."); router.refresh();

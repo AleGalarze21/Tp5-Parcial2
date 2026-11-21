@@ -1,9 +1,9 @@
 import { and, asc, eq } from "drizzle-orm";
-import { z } from "zod";
 import { ApiError } from "@/lib/api-error";
 import { requireAdmin, requireUser, type AuthenticatedUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
+import { categoryCreateSchema, categoryPatchSchema } from "@/lib/schemas";
 
 export async function listCategories() {
   await requireUser();
@@ -12,7 +12,7 @@ export async function listCategories() {
 
 export async function createCategory(input: unknown, asUser?: AuthenticatedUser) {
   await requireAdmin(asUser);
-  const parsed = z.object({ name: z.string().trim().min(2).max(80) }).strict().safeParse(input);
+  const parsed = categoryCreateSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(422, "VALIDACION", "El nombre debe tener entre 2 y 80 caracteres.");
   try {
     const [category] = await db.insert(categories).values({ name: parsed.data.name }).returning();
@@ -25,7 +25,7 @@ export async function createCategory(input: unknown, asUser?: AuthenticatedUser)
 
 export async function updateCategory(id: number, input: unknown) {
   await requireAdmin();
-  const parsed = z.object({ name: z.string().trim().min(2).max(80).optional(), active: z.boolean().optional() }).strict().safeParse(input);
+  const parsed = categoryPatchSchema.safeParse(input);
   if (!parsed.success || Object.keys(parsed.data ?? {}).length === 0) throw new ApiError(422, "VALIDACION", "Indicá un nombre o el estado de la categoría.");
   if (parsed.data.active === false) {
     const [inUse] = await db.select({ id: products.id }).from(products).where(and(eq(products.categoryId, id), eq(products.active, true))).limit(1);

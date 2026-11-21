@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Printer, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { currency, dateTime } from "@/lib/utils";
+import { invoiceCancellationSchema } from "@/lib/schemas";
 
 type Invoice = {
   id: number; formattedNumber: string; date: Date; total: number; paymentForm: string; status: string;
@@ -18,8 +19,10 @@ type Invoice = {
 export function InvoiceDetails({ invoice, isAdmin, businessName, businessAddress, businessPhone }: { invoice: Invoice; isAdmin: boolean; businessName: string; businessAddress?: string; businessPhone?: string }) {
   const router = useRouter(); const [showCancel, setShowCancel] = useState(false); const [reason, setReason] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   async function cancel() {
+    const validation = invoiceCancellationSchema.safeParse({ motivo: reason });
+    if (!validation.success) { setError(validation.error.issues[0]?.message ?? "Ingresá un motivo válido."); return; }
     setBusy(true); setError("");
-    const response = await fetch(`/api/facturas/${invoice.id}/anulacion`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ motivo: reason }) });
+    const response = await fetch(`/api/facturas/${invoice.id}/anulacion`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo anular la factura."); return; }
     setShowCancel(false); router.refresh();

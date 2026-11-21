@@ -1,21 +1,11 @@
 import { and, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
-import { z } from "zod";
 import { ApiError } from "@/lib/api-error";
 import { requireAdmin, requireUser, type AuthenticatedUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { accountMovements, customers, invoiceItems, invoices, products, sequences, stockMovements, users } from "@/lib/db/schema";
+import { accountMovements, customers, invoiceItems, invoices, products, sequences, users } from "@/lib/db/schema";
 import { nextSequence } from "@/lib/services/sequences";
-
-const paymentSchema = z.discriminatedUnion("forma", [
-  z.object({ forma: z.literal("contado"), montoRecibido: z.number().int().nonnegative().optional() }).strict(),
-  z.object({ forma: z.literal("tarjeta"), tarjeta: z.object({ tipo: z.enum(["debito", "credito"]), marca: z.string().trim().min(2).max(30), ultimos4: z.string().regex(/^\d{4}$/) }).strict() }).strict(),
-  z.object({ forma: z.literal("cuenta_corriente") }).strict(),
-]);
-const invoiceSchema = z.object({
-  clienteId: z.number().int().positive().nullable(),
-  items: z.array(z.object({ productoId: z.number().int().positive(), cantidad: z.number().int().positive() }).strict()).min(1),
-  pago: paymentSchema,
-}).strict().refine((value) => new Set(value.items.map((item) => item.productoId)).size === value.items.length, { message: "No repitas productos en los renglones.", path: ["items"] });
+import { moveStockInTransaction } from "@/lib/services/stock";
+import { invoiceCancellationSchema, invoiceSchema } from "@/lib/schemas";
 
 export function formatInvoiceNumber(pointOfSale: number, number: number) {
   return `${String(pointOfSale).padStart(4, "0")}-${String(number).padStart(8, "0")}`;
@@ -81,10 +71,8 @@ export async function createInvoice(input: unknown, asUser?: AuthenticatedUser, 
       cardLastFour: data.pago.forma === "tarjeta" ? data.pago.tarjeta.ultimos4 : null,
     }).returning();
     for (const item of lineItems) {
-      const [updated] = await tx.update(products).set({ stock: sql`${products.stock} - ${item.cantidad}` }).where(and(eq(products.id, item.productoId), gte(products.stock, item.cantidad))).returning({ stock: products.stock });
-      if (!updated) throw new ApiError(409, "STOCK_INSUFICIENTE", "Otra venta actualizó la existencia. Revisá el stock y volvé a intentar.", [{ productoId: item.productoId, solicitado: item.cantidad }]);
+      await moveStockInTransaction(tx, { productId: item.productoId, userId: user.id, invoiceId: invoice.id, type: "venta", quantity: item.cantidad, reason: `Factura ${formatInvoiceNumber(1, number)}`, createdAt: date });
       await tx.insert(invoiceItems).values({ invoiceId: invoice.id, productId: item.productoId, code: item.code, description: item.description, quantity: item.cantidad, unitPrice: item.unitPrice, subtotal: item.subtotal });
-      await tx.insert(stockMovements).values({ productId: item.productoId, userId: user.id, invoiceId: invoice.id, type: "venta", quantity: -item.cantidad, resultingStock: updated.stock, reason: `Factura ${formatInvoiceNumber(1, number)}`, createdAt: date });
     }
     if (data.pago.forma === "cuenta_corriente" && customer) {
       await tx.insert(accountMovements).values({ customerId: customer.id, invoiceId: invoice.id, userId: user.id, type: "debito", amount: total, description: `Factura ${formatInvoiceNumber(1, number)}`, createdAt: date });
@@ -138,7 +126,7 @@ export async function getInvoice(id: number) {
 
 export async function cancelInvoice(id: number, input: unknown, asUser?: AuthenticatedUser) {
   const user = await requireAdmin(asUser);
-  const parsed = z.object({ motivo: z.string().trim().min(3).max(250) }).strict().safeParse(input);
+  const parsed = invoiceCancellationSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(422, "VALIDACION", "El motivo de anulación es obligatorio.");
   return db.transaction(async (tx) => {
     const [invoice] = await tx.select().from(invoices).where(eq(invoices.id, id)).limit(1);
@@ -148,8 +136,7 @@ export async function cancelInvoice(id: number, input: unknown, asUser?: Authent
     if (!updated) throw new ApiError(409, "FACTURA_ANULADA", "La factura ya está anulada.");
     const items = await tx.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
     for (const item of items) {
-      const [stock] = await tx.update(products).set({ stock: sql`${products.stock} + ${item.quantity}` }).where(eq(products.id, item.productId)).returning({ stock: products.stock });
-      await tx.insert(stockMovements).values({ productId: item.productId, userId: user.id, invoiceId: id, type: "anulacion", quantity: item.quantity, resultingStock: stock.stock, reason: parsed.data.motivo });
+      await moveStockInTransaction(tx, { productId: item.productId, userId: user.id, invoiceId: id, type: "anulacion", quantity: item.quantity, reason: parsed.data.motivo });
     }
     if (invoice.paymentForm === "cuenta_corriente" && invoice.customerId) {
       await tx.insert(accountMovements).values({ customerId: invoice.customerId, invoiceId: id, userId: user.id, type: "credito", amount: invoice.total, description: `Anulación factura ${formatInvoiceNumber(invoice.pointOfSale, invoice.number)}` });

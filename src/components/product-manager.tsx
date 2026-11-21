@@ -7,6 +7,7 @@ import { Archive, ArrowDownToLine, ArrowUpFromLine, Boxes, Pencil, Plus, Search,
 import { Button } from "@/components/ui/button";
 import { currency } from "@/lib/utils";
 import { Pagination } from "@/components/pagination";
+import { productCreateSchema, productPatchSchema, stockMovementSchema } from "@/lib/schemas";
 
 type Category = { id: number; name: string };
 export type ProductRow = { id: number; code: string; description: string; categoryId: number; category: string; price: number; stock: number; minStock: number; belowMinimum: boolean; active: boolean };
@@ -23,7 +24,9 @@ export function ProductManager({ products, categories, canEdit, query, categoryI
   async function submitProduct(form: FormData) {
     setBusy(true); setError("");
     const input = { code: form.get("code"), description: form.get("description"), categoryId: Number(form.get("categoryId")), price: Math.round(Number(form.get("price")) * 100), minStock: Number(form.get("minStock")), ...(dialog === "new" ? { initialStock: Number(form.get("initialStock")) } : {}) };
-    const response = await fetch(dialog === "edit" && selected ? `/api/productos/${selected.id}` : "/api/productos", { method: dialog === "edit" ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+    const validation = (dialog === "edit" ? productPatchSchema : productCreateSchema).safeParse(input);
+    if (!validation.success) { setBusy(false); setError(validation.error.issues[0]?.message ?? "Revisá los datos del producto."); return; }
+    const response = await fetch(dialog === "edit" && selected ? `/api/productos/${selected.id}` : "/api/productos", { method: dialog === "edit" ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json();
     setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo guardar el producto."); return; }
@@ -32,7 +35,9 @@ export function ProductManager({ products, categories, canEdit, query, categoryI
   async function submitMovement(form: FormData) {
     if (!selected) return;
     setBusy(true); setError("");
-    const response = await fetch(`/api/productos/${selected.id}/movimientos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: form.get("type"), quantity: Number(form.get("quantity")), reason: form.get("reason") }) });
+    const validation = stockMovementSchema.safeParse({ type: form.get("type"), quantity: Number(form.get("quantity")), reason: form.get("reason") });
+    if (!validation.success) { setBusy(false); setError(validation.error.issues[0]?.message ?? "Revisá los datos del movimiento."); return; }
+    const response = await fetch(`/api/productos/${selected.id}/movimientos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo registrar el movimiento."); return; }
     setDialog(null); setNotice("Movimiento de stock registrado."); router.refresh();

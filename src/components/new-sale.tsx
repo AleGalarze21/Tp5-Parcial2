@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Banknote, CreditCard, PackagePlus, Plus, Search, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { currency } from "@/lib/utils";
+import { customerSchema, invoiceSchema } from "@/lib/schemas";
 
 type Product = { id: number; code: string; description: string; price: number; stock: number };
 type Customer = { id: number; name: string; documentType: string; documentNumber: string; currentAccount: boolean; creditLimit: number | null; balance: number };
@@ -32,16 +33,22 @@ export function NewSale({ products, customers }: { products: Product[]; customer
   }
   async function createCustomer(form: FormData) {
     setError("");
-    const response = await fetch("/api/clientes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documentType: form.get("documentType"), documentNumber: form.get("documentNumber"), name: form.get("name"), phone: form.get("phone") || null, address: form.get("address") || null, currentAccount: form.get("currentAccount") === "on", creditLimit: form.get("creditLimit") ? Math.round(Number(form.get("creditLimit")) * 100) : null }) });
+    const input = { documentType: form.get("documentType"), documentNumber: form.get("documentNumber"), name: form.get("name"), phone: form.get("phone") || null, address: form.get("address") || null, currentAccount: form.get("currentAccount") === "on", creditLimit: form.get("creditLimit") ? Math.round(Number(form.get("creditLimit")) * 100) : null };
+    const validation = customerSchema.safeParse(input);
+    if (!validation.success) { setError(validation.error.issues[0]?.message ?? "Revisá los datos del cliente."); return; }
+    const response = await fetch("/api/clientes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); if (!response.ok) { setError(payload.error?.message ?? "No se pudo crear el cliente."); return; }
     const newCustomer = { ...payload, balance: 0 }; setBuyer(newCustomer); setShowCustomer(false);
   }
   async function submit() {
     setError(""); if (!cart.length) { setError("Agregá al menos un producto."); return; }
     if (payment === "cuenta_corriente" && !buyer) { setError("Elegí un cliente para vender en cuenta corriente."); return; }
+    const pago = payment === "contado" ? { forma: "contado" as const, montoRecibido: received ? Math.round(Number(received) * 100) : undefined } : payment === "tarjeta" ? { forma: "tarjeta" as const, tarjeta: { tipo: cardType as "debito" | "credito", marca: cardBrand, ultimos4: lastFour } } : { forma: "cuenta_corriente" as const };
+    const input = { clienteId: buyer?.id ?? null, items: cart.map((line) => ({ productoId: line.id, cantidad: line.quantity })), pago };
+    const validation = invoiceSchema.safeParse(input);
+    if (!validation.success) { setError(validation.error.issues[0]?.message ?? "Revisá los datos de la venta."); return; }
     setBusy(true);
-    const pago = payment === "contado" ? { forma: "contado", montoRecibido: received ? Math.round(Number(received) * 100) : undefined } : payment === "tarjeta" ? { forma: "tarjeta", tarjeta: { tipo: cardType, marca: cardBrand, ultimos4: lastFour } } : { forma: "cuenta_corriente" };
-    const response = await fetch("/api/facturas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clienteId: buyer?.id ?? null, items: cart.map((line) => ({ productoId: line.id, cantidad: line.quantity })), pago }) });
+    const response = await fetch("/api/facturas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo confirmar la venta."); return; }
     router.push(`/ventas/${payload.id}`); router.refresh();

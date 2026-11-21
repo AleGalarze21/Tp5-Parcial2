@@ -5,17 +5,7 @@ import { requireUser, type AuthenticatedUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { accountMovements, customers, invoices, payments, users } from "@/lib/db/schema";
 import { nextSequence } from "@/lib/services/sequences";
-
-const customerSchema = z.object({
-  documentType: z.enum(["DNI", "CUIT"]),
-  documentNumber: z.string().trim().min(5).max(20),
-  name: z.string().trim().min(2).max(140),
-  address: z.string().trim().max(180).optional().nullable(),
-  phone: z.string().trim().max(40).optional().nullable(),
-  email: z.union([z.email(), z.literal("")]).optional().nullable(),
-  currentAccount: z.boolean().optional().default(false),
-  creditLimit: z.number().int().positive().optional().nullable(),
-}).strict();
+import { accountPaymentSchema, customerPatchSchema, customerSchema } from "@/lib/schemas";
 
 const balanceExpression = sql<number>`coalesce(sum(case when ${accountMovements.type} = 'debito' then ${accountMovements.amount} else -${accountMovements.amount} end), 0)`;
 
@@ -69,7 +59,7 @@ export async function createCustomer(input: unknown, asUser?: AuthenticatedUser)
 
 export async function updateCustomer(id: number, input: unknown) {
   await requireUser();
-  const parsed = customerSchema.partial().extend({ active: z.boolean().optional() }).strict().safeParse(input);
+  const parsed = customerPatchSchema.safeParse(input);
   if (!parsed.success) throw validationError(parsed.error);
   if (Object.keys(parsed.data).length === 0) throw new ApiError(422, "VALIDACION", "Indicá al menos un campo para modificar.");
   const [existing] = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
@@ -107,11 +97,9 @@ export async function listAccountMovements(customerId: number, from?: string, to
   return { customer, previousBalance: before, movements, balance: await customerBalance(customerId) };
 }
 
-const paymentSchema = z.object({ amount: z.number().int().positive(), method: z.enum(["efectivo", "transferencia", "tarjeta_debito"]), note: z.string().trim().max(240).optional() });
-
 export async function registerPayment(customerId: number, input: unknown, asUser?: AuthenticatedUser, date = new Date()) {
   const user = await requireUser(asUser);
-  const parsed = paymentSchema.safeParse(input);
+  const parsed = accountPaymentSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(422, "VALIDACION", "Revisá el importe y el medio de pago.", parsed.error.issues.map((issue) => ({ campo: String(issue.path[0] ?? "pago"), mensaje: issue.message })));
   return db.transaction(async (tx) => {
     const [customer] = await tx.select().from(customers).where(eq(customers.id, customerId)).limit(1);

@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { ArrowDownToLine, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { currency } from "@/lib/utils";
+import { accountPaymentSchema } from "@/lib/schemas";
 
 export function PaymentForm({ customerId, balance }: { customerId: number; balance: number }) {
   const router = useRouter(); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   async function submit(form: FormData) {
     setBusy(true); setError("");
-    const amount = Math.round(Number(form.get("amount")) * 100);
-    const response = await fetch(`/api/clientes/${customerId}/pagos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount, method: form.get("method"), note: form.get("note") }) });
+    const validation = accountPaymentSchema.safeParse({ amount: Math.round(Number(form.get("amount")) * 100), method: form.get("method"), note: form.get("note") });
+    if (!validation.success) { setBusy(false); setError(validation.error.issues[0]?.message ?? "Revisá el importe y el medio de pago."); return; }
+    const response = await fetch(`/api/clientes/${customerId}/pagos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo registrar el pago."); return; }
     router.push(`/clientes/pagos/${payload.id}`); router.refresh();

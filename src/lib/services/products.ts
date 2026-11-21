@@ -1,33 +1,10 @@
 import { and, asc, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
-import { z } from "zod";
 import { ApiError } from "@/lib/api-error";
 import { db } from "@/lib/db";
 import { categories, invoices, products, stockMovements, users } from "@/lib/db/schema";
 import { requireAdmin, requireUser, type AuthenticatedUser } from "@/lib/auth";
-
-const money = z.number().int().nonnegative();
-const productCreateSchema = z.object({
-  code: z.string().trim().min(1, "Ingresá un código.").max(32),
-  description: z.string().trim().min(2, "Ingresá una descripción.").max(160),
-  categoryId: z.number().int().positive(),
-  price: money,
-  minStock: z.number().int().nonnegative(),
-  initialStock: z.number().int().nonnegative().optional().default(0),
-}).strict();
-const productPatchSchema = z.object({
-  code: z.string().trim().min(1).max(32).optional(),
-  description: z.string().trim().min(2).max(160).optional(),
-  categoryId: z.number().int().positive().optional(),
-  price: money.optional(),
-  minStock: z.number().int().nonnegative().optional(),
-  active: z.boolean().optional(),
-}).strict();
-const movementSchema = z.object({
-  type: z.enum(["ingreso", "egreso"]),
-  quantity: z.number().int().positive(),
-  reason: z.string().trim().min(2).max(100),
-  note: z.string().trim().max(250).optional(),
-});
+import { moveStockInTransaction } from "@/lib/services/stock";
+import { productCreateSchema, productPatchSchema, stockMovementSchema } from "@/lib/schemas";
 
 export async function listProducts(params: { q?: string; categoryId?: string; belowMinimum?: boolean; active?: "true" | "false" | "all" } = {}) {
   const user = await requireUser();
@@ -61,8 +38,8 @@ export async function createProduct(input: unknown, asUser?: AuthenticatedUser) 
     return await db.transaction(async (tx) => {
       const [category] = await tx.select().from(categories).where(and(eq(categories.id, data.categoryId), eq(categories.active, true))).limit(1);
       if (!category) throw new ApiError(422, "VALIDACION", "Elegí una categoría activa.");
-      const [created] = await tx.insert(products).values({ code: data.code, description: data.description, categoryId: data.categoryId, price: data.price, minStock: data.minStock, stock: data.initialStock }).returning();
-      if (data.initialStock > 0) await tx.insert(stockMovements).values({ productId: created.id, userId: user.id, type: "ingreso", quantity: data.initialStock, resultingStock: data.initialStock, reason: "Stock inicial" });
+      const [created] = await tx.insert(products).values({ code: data.code, description: data.description, categoryId: data.categoryId, price: data.price, minStock: data.minStock, stock: 0 }).returning();
+      if (data.initialStock > 0) await moveStockInTransaction(tx, { productId: created.id, userId: user.id, type: "ingreso", quantity: data.initialStock, reason: "Stock inicial" });
       return created;
     });
   } catch (error) {
@@ -92,20 +69,10 @@ export async function updateProduct(id: number, input: unknown) {
 
 export async function moveStock(id: number, input: unknown) {
   const user = await requireAdmin();
-  const parsed = movementSchema.safeParse(input);
+  const parsed = stockMovementSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(422, "VALIDACION", "Revisá los datos del movimiento.", parsed.error.issues.map((issue) => ({ campo: String(issue.path[0] ?? "movimiento"), mensaje: issue.message })));
   const { type, quantity, reason } = parsed.data;
-  const signedQuantity = type === "ingreso" ? quantity : -quantity;
-  return db.transaction(async (tx) => {
-    const [updated] = await tx.update(products).set({ stock: sql`${products.stock} + ${signedQuantity}` }).where(and(eq(products.id, id), ...(type === "egreso" ? [gte(products.stock, quantity)] : []))).returning({ stock: products.stock });
-    if (!updated) {
-      const [existing] = await tx.select({ id: products.id }).from(products).where(eq(products.id, id)).limit(1);
-      if (!existing) throw new ApiError(404, "NO_ENCONTRADO", "No encontramos ese producto.");
-      throw new ApiError(409, "STOCK_INSUFICIENTE", "El egreso supera la existencia disponible.");
-    }
-    const [movement] = await tx.insert(stockMovements).values({ productId: id, userId: user.id, type, quantity: signedQuantity, resultingStock: updated.stock, reason }).returning();
-    return movement;
-  });
+  return db.transaction(async (tx) => (await moveStockInTransaction(tx, { productId: id, userId: user.id, type, quantity, reason })).movement);
 }
 
 export async function listStockMovements(productId?: number, params: { type?: string; from?: string; to?: string } = {}) {

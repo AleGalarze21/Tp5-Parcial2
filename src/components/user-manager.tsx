@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { KeyRound, Pencil, Plus, UserRoundCog, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/pagination";
+import { userCreateSchema, userPatchSchema } from "@/lib/schemas";
 
 type User = { id: number; name: string; email: string; role: "admin" | "vendedor"; active: boolean };
 export function UserManager({ users, currentUserId, query, active, page, total, pageSize }: { users: User[]; currentUserId: number; query: string; active: string; page: number; total: number; pageSize: number }) {
@@ -14,7 +15,9 @@ export function UserManager({ users, currentUserId, query, active, page, total, 
   async function save(form: FormData) {
     setBusy(true); setError("");
     const data = { name: form.get("name"), email: form.get("email"), role: form.get("role"), ...(!editing ? { password: form.get("password") } : {}) };
-    const response = await fetch(editing ? `/api/usuarios/${editing.id}` : "/api/usuarios", { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const validation = (editing ? userPatchSchema : userCreateSchema).safeParse(data);
+    if (!validation.success) { setBusy(false); setError(validation.error.issues[0]?.message ?? "Revisá los datos del usuario."); return; }
+    const response = await fetch(editing ? `/api/usuarios/${editing.id}` : "/api/usuarios", { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo guardar el usuario."); return; }
     setModal(false); setNotice(editing ? "Usuario actualizado." : "Usuario creado."); router.refresh();

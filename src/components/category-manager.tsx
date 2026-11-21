@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, Pencil, Plus, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { categoryCreateSchema, categoryPatchSchema } from "@/lib/schemas";
 
 type Category = { id: number; name: string };
 export function CategoryManager({ categories }: { categories: Category[] }) {
@@ -15,7 +16,9 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
   const [busy, setBusy] = useState(false);
   async function save(event: React.FormEvent) {
     event.preventDefault(); setBusy(true); setError("");
-    const response = await fetch(editing ? `/api/categorias/${editing.id}` : "/api/categorias", { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+    const validation = (editing ? categoryPatchSchema : categoryCreateSchema).safeParse({ name });
+    if (!validation.success) { setBusy(false); setError(validation.error.issues[0]?.message ?? "Revisá el nombre de la categoría."); return; }
+    const response = await fetch(editing ? `/api/categorias/${editing.id}` : "/api/categorias", { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = await response.json(); setBusy(false);
     if (!response.ok) { setError(payload.error?.message ?? "No se pudo guardar la categoría."); return; }
     setName(""); setEditing(null); setNotice(editing ? "Categoría actualizada." : "Categoría creada."); router.refresh();

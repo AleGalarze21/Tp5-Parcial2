@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { passwordChangeSchema } from "@/lib/schemas";
 
 export function PasswordForm() {
   const [error, setError] = useState(""); const [success, setSuccess] = useState(""); const [busy, setBusy] = useState(false);
   async function submit(form: FormData) {
     setBusy(true); setError(""); setSuccess("");
-    const response = await fetch("/api/auth/password", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ actual: form.get("actual"), nueva: form.get("nueva") }) });
+    const validation = passwordChangeSchema.safeParse({ actual: form.get("actual"), nueva: form.get("nueva") });
+    if (!validation.success) { setBusy(false); setError(validation.error.issues[0]?.message ?? "Revisá la contraseña."); return; }
+    const response = await fetch("/api/auth/password", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validation.data) });
     const payload = response.status === 204 ? null : await response.json(); setBusy(false);
     if (!response.ok) { setError(payload?.error?.message ?? "No se pudo cambiar la contraseña."); return; }
     setSuccess("Contraseña actualizada.");
