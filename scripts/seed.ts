@@ -18,7 +18,8 @@ async function ensureUser(email: string, name: string, password: string, role: "
 const catalogOnly = process.env.SEED_CATALOG_ONLY === "true";
 const [existingAdmin] = await db.select().from(users).where(eq(users.role, "admin")).limit(1);
 const admin = existingAdmin ?? await ensureUser("laura@nexusgpu.test", "Laura Méndez", "Admin123!", "admin");
-const seller = catalogOnly ? undefined : await ensureUser("pablo@nexusgpu.test", "Pablo Ruiz", "Vendedor123!", "vendedor");
+const [existingSeller] = catalogOnly ? [undefined] : await db.select().from(users).where(eq(users.role, "vendedor")).limit(1);
+const seller = catalogOnly ? undefined : existingSeller ?? await ensureUser("pablo@nexusgpu.test", "Pablo Ruiz", "Vendedor123!", "vendedor");
 const categoryNames = ["Placas de video", "Procesadores", "Memoria y almacenamiento", "Equipos para IA", "Refrigeración y fuentes"];
 const categoryIds: number[] = [];
 for (const name of categoryNames) {

@@ -52,6 +52,20 @@ Remove-Item Env:SEED_CATALOG_ONLY
 
 Usá la URL `libsql://` de Turso, no `file:local.db`. El token se obtiene desde la configuración de conexión de la base y no debe subirse a GitHub.
 
+### Reiniciar todos los datos de demostración
+
+Este comando borra clientes, facturas, pagos, movimientos, productos, categorías y secuencias de la base indicada, y después carga datos de prueba nuevos para NEXUS GPU. Conserva los usuarios existentes para mantener sus accesos. Usalo únicamente cuando quieras reemplazar por completo el resto de los datos.
+
+```powershell
+$env:TURSO_DATABASE_URL = "libsql://<base>-<organizacion>.turso.io"
+$env:TURSO_AUTH_TOKEN = "<token-de-turso>"
+$env:RESET_DATABASE = "true"
+corepack pnpm run db:reset-demo
+Remove-Item Env:RESET_DATABASE, Env:TURSO_DATABASE_URL, Env:TURSO_AUTH_TOKEN
+```
+
+Para reiniciar la base local, omití `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`. La protección `RESET_DATABASE=true` es obligatoria para ejecutar el borrado.
+
 ## Usuarios de prueba
 
 | Rol | Email | Contraseña |
