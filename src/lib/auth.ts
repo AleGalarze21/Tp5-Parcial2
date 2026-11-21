@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { ApiError } from "@/lib/api-error";
 
-const COOKIE_NAME = "mostrador_session";
+const COOKIE_NAME = "nexusgpu_session";
 const SESSION_TTL = 60 * 60 * 24 * 7;
 
 function secret() {

@@ -364,13 +364,13 @@ La sesión se abre con email y contraseña y queda en una cookie; un usuario des
 #### POST /api/auth/login
 
 ```json
-{ "email": "laura@ferreteria.test", "password": "••••••••" }
+{ "email": "laura@nexusgpu.test", "password": "••••••••" }
 ```
 
 `200` con el usuario y la cookie de sesión en `Set-Cookie`. `401 CREDENCIALES_INVALIDAS` si el email no existe, la contraseña no coincide o el usuario está inactivo: el mensaje es el mismo en los tres casos.
 
 ```json
-{ "id": 1, "nombre": "Laura Méndez", "email": "laura@ferreteria.test", "rol": "admin" }
+{ "id": 1, "nombre": "Laura Méndez", "email": "laura@nexusgpu.test", "rol": "admin" }
 ```
 
 #### Resto de la sesión
@@ -399,10 +399,10 @@ La existencia de un producto solo cambia por movimientos: ventas, anulaciones, i
 ```json
 {
   "id": 1,
-  "codigo": "HE-001",
-  "descripcion": "Martillo carpintero 500 g",
-  "categoria": { "id": 1, "nombre": "Herramientas" },
-  "precio": 1250000,
+  "codigo": "PR-001",
+  "descripcion": "GeForce RTX 5090 32 GB GDDR7",
+  "categoria": { "id": 1, "nombre": "Placas de video" },
+  "precio": 279990000,
   "existencia": 24,
   "stockMinimo": 5,
   "bajoMinimo": false,
@@ -578,12 +578,12 @@ Los pasos 3 y 8 deben ser atómicos frente a otra venta simultánea. Una forma s
   "cliente": { "id": 1, "nombre": "Mariana López", "tipoDoc": "DNI", "nroDoc": "28.456.123", "domicilio": "Las Heras 455" },
   "vendedor": { "id": 1, "nombre": "Laura Méndez" },
   "items": [
-    { "productoId": 4, "codigo": "EL-001", "descripcion": "Cinta aisladora 20 m", "cantidad": 1, "precioUnitario": 190000, "subtotal": 190000 },
-    { "productoId": 1, "codigo": "HE-001", "descripcion": "Martillo carpintero 500 g", "cantidad": 1, "precioUnitario": 1250000, "subtotal": 1250000 }
+    { "productoId": 4, "codigo": "PR-004", "descripcion": "GeForce RTX 5070 12 GB", "cantidad": 1, "precioUnitario": 109990000, "subtotal": 109990000 },
+    { "productoId": 1, "codigo": "PR-001", "descripcion": "GeForce RTX 5090 32 GB GDDR7", "cantidad": 1, "precioUnitario": 279990000, "subtotal": 279990000 }
   ],
-  "total": 1440000,
+  "total": 389980000,
   "pago": { "forma": "cuenta_corriente" },
-  "saldoCliente": 1440000
+  "saldoCliente": 389980000
 }
 ```
 
