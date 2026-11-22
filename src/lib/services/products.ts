@@ -8,7 +8,7 @@ import { productCreateSchema, productPatchSchema, stockMovementSchema } from "@/
 
 export async function listProducts(params: { q?: string; categoryId?: string; belowMinimum?: boolean; active?: "true" | "false" | "all" } = {}) {
   const user = await requireUser();
-  const filters = [];
+  const filters = [eq(categories.active, true)];
   if ((params.active === "false" || params.active === "all") && user.role !== "admin") throw new ApiError(403, "SIN_PERMISO", "Solo administración puede consultar productos inactivos.");
   if (params.active === "false") filters.push(eq(products.active, false));
   else if (params.active === "all" && user.role !== "admin") filters.push(eq(products.active, true));
