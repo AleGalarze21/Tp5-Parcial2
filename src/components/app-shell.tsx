@@ -22,10 +22,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     </aside>
     <main className="min-w-0 flex-1">
-      <header className="flex h-16 items-center justify-between border-b border-[var(--border)] bg-white px-5 md:px-8">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--border)] bg-white px-5 md:px-8">
         <div className="flex items-center gap-2 md:hidden"><Cpu size={20} className="text-[var(--primary)]"/><strong>NEXUS GPU</strong></div>
         <div className="hidden text-sm text-[var(--muted)] md:block">Centro de operaciones <span className="mx-2 text-[var(--border)]">/</span> Hardware e inteligencia artificial</div>
-        <div className="flex items-center gap-3"><span className="hidden text-sm text-slate-600 sm:block">{user.name}</span><span className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-xs font-semibold capitalize text-[var(--primary)]">{user.role}</span>
+        <div className="flex items-center gap-3"><span className="hidden text-sm text-slate-600 sm:block">{user.name}</span><span className="hidden rounded-full bg-[var(--primary-soft)] px-3 py-1 text-xs font-semibold capitalize text-[var(--primary)] sm:inline-flex">{user.role}</span>
+          <form action={logoutAction}><Button size="sm" variant="outline" className="px-2 sm:px-3"><LogOut size={16}/><span className="hidden sm:inline">Cerrar sesión</span><span className="sm:hidden">Salir</span></Button></form>
           <details className="relative md:hidden"><summary className="grid size-10 list-none place-items-center rounded-lg border border-[var(--border)]"><Menu size={18}/></summary><nav className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-[var(--border)] bg-white p-2 shadow-xl">{[{ href: "/", label: "Inicio" }, { href: "/ventas", label: "Ventas" }, { href: "/productos", label: "Productos" }, { href: "/clientes", label: "Clientes" }, ...(user.role === "admin" ? [{ href: "/usuarios", label: "Usuarios" }] : [])].map((link) => <Link key={link.href} href={link.href} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-50">{link.label}</Link>)}<Link href="/perfil" className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-50">Mi perfil</Link><form action={logoutAction}><button className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50">Cerrar sesión</button></form></nav></details>
         </div>
       </header>
