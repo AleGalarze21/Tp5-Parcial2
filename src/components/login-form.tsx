@@ -49,6 +49,15 @@ export function LoginForm() {
         <Button type="button" variant="outline" disabled={busy} onClick={() => login("laura@nexusgpu.test", "0987654321@Ale")}><ShieldCheck size={16}/>Administrador</Button>
         <Button type="button" variant="outline" disabled={busy} onClick={() => login("pablo@nexusgpu.test", "0987654321@Ale1")}><UserRound size={16}/>Vendedor</Button>
       </div>
+      <div className="rounded-xl border border-[var(--border)] bg-slate-50/70 p-4 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">Grupo 4</p>
+        <p className="mt-1 text-xs text-[var(--muted)]">Integrantes</p>
+        <div className="mt-3 space-y-1 text-sm font-medium text-slate-700">
+          <p>Palacios Francisco <span className="font-normal text-[var(--muted)]">· 61024</span></p>
+          <p>Ledesma Cristian <span className="font-normal text-[var(--muted)]">· 62523</span></p>
+          <p>Galarze Alejandro <span className="font-normal text-[var(--muted)]">· 63142</span></p>
+        </div>
+      </div>
     </div>
   </form>;
 }
